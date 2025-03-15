@@ -1,8 +1,9 @@
 {
-  "name": "helloworld",
+  "name": "byteextension",
   "displayName": "Byte",
   "description": "",
   "version": "0.0.1",
+  "publisher": "SophiaEvans",
   "engines": {
     "vscode": "^1.98.0"
   },

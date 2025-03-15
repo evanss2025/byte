@@ -12,28 +12,38 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "byte" is now active!');
 
     function detect() {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showInformationMessage('No active editor found');
-            return;
-        }
-        const Detector = new bugDetector(editor);
-        const position = editor.selection.active;
-
-        if (Detector.detectBug()) {
-            vscode.window.showInformationMessage('Bug detected');
-            Animator.startBugs(editor, position);
-        } else {
-            vscode.window.showInformationMessage('No bug detected');
-        }
-    }
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showInformationMessage('No active editor found');
+			return;
+		}
+		
+		const Detector = new bugDetector(editor);
+		const bugPositions = Detector.detectBugs();
+	
+		if (bugPositions.length > 0) {
+			vscode.window.showInformationMessage('Bugs detected');
+			if (!Animator.running) {
+				// Only start bugs if not already running
+				Animator.startBugs(editor, bugPositions);
+			} else {
+				// Otherwise just update the existing bugs
+				Animator.updateBugs(editor);
+			}
+		} else {
+			vscode.window.showInformationMessage('No bugs detected');
+			if (Animator.running) {
+				Animator.endBugs();
+			}
+		}
+	}
 
     let startBugs = vscode.commands.registerCommand('Byte.Start', () => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             vscode.window.showInformationMessage('Releasing the Bugs');
-            detect(); // Call detect once to create a bug if needed
-            detectInterval = setInterval(() => detect(), 5000);
+            detect(); // Call detect once to create bugs if needed
+            detectInterval = setInterval(() => detect(), 5000); // Call detect every 5 seconds
         } else {
             vscode.window.showInformationMessage('No active editor found');
         }
@@ -48,10 +58,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    vscode.workspace.onDidChangeTextDocument(event => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) return;
+
+        Animator.updateBugs(editor);
+    });
+
     context.subscriptions.push(startBugs, endBugs);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {
     if (detectInterval) {
         clearInterval(detectInterval);

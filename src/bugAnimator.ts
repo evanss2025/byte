@@ -15,16 +15,12 @@ export class bugAnimator {
         const bug = new Bug(editor, position, this);
         this.bugs.push(bug);
         bug.show();
-        for (let i = 0; i < 10; i++) {
-            bug.startMoving();
-        }
+        bug.startMoving();
         console.log(this.bugs);
     }
 
     public startBugs(editor: vscode.TextEditor, position: vscode.Position) {
         this.running = true;
-        this.createBug(editor, position);
-        this.createBug(editor, position);
         this.createBug(editor, position);
     }
 
@@ -35,14 +31,14 @@ export class bugAnimator {
             bug.stop();
         }
         this.bugs = [];
-    
+
         console.log("endBugs function is running");
         console.log(this.bugs);
     }
 }
 
 class Bug {
-    private bugs: string[] = ['🐜', '🐛', '🪲'];
+    private bugs: string[] = ['🐜', '🐛', '🪲', '🦗', '🐞'];
 
     private editor: vscode.TextEditor;
     public position: vscode.Position;
@@ -69,25 +65,30 @@ class Bug {
 
     move() {
         if (!this.animator.running) {
+            console.log("Bug movement stopped because animator is not running");
             return;
         }
-    
+
         console.log("bug is moving");
-        let verticalDirections = [-3, 3];
-        let horizontalDirections = [-3, 3];
-    
+        let verticalDirections = [-1, 1];
+        let horizontalDirections = [-1, 1];
+
         let lineOffset = verticalDirections[Math.floor(Math.random() * verticalDirections.length)];
         let charOffset = horizontalDirections[Math.floor(Math.random() * horizontalDirections.length)];
-    
+
         let newLine = Math.max(0, Math.min(this.editor.document.lineCount - 1, this.position.line + lineOffset));
         let newChar = Math.max(0, Math.min(this.editor.document.lineAt(newLine).text.length, this.position.character + charOffset));
-    
+
         this.position = new vscode.Position(newLine, newChar);
         this.show();
+
+        if (Math.random() < 0.2) {
+            this.deleteCode();
+        }
     }
 
     startMoving() {
-        this.interval = setInterval(() => this.move(), 1000);
+        this.interval = setInterval(() => this.move(), 1500);
     }
 
     stop() {
@@ -105,5 +106,17 @@ class Bug {
         return this.bugs[randomIndex];
     }
 
-    public deleteCode()
+    public deleteCode() {
+        let lineText = this.editor.document.lineAt(this.position.line).text;
+        if (lineText.length === 0) return;
+
+        let deleteIndex = Math.floor(Math.random() * lineText.length);
+        let range = new vscode.Range(
+            new vscode.Position(this.position.line, deleteIndex),
+            new vscode.Position(this.position.line, deleteIndex + 1)
+        );
+        this.editor.edit(editBuilder => {
+            editBuilder.delete(range);
+        });
+    }
 }
